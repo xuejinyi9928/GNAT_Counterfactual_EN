@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GNAT_EN</title>
+    <script src="https://unpkg.com/jspsych@8.2.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-fullscreen@2.0.0"></script>
+    <script src="https://www.wjdpn.cn/epilepsy/javascriptlibrary/jstat.js"></script>
+    <link href="https://unpkg.com/jspsych@8.2.2/css/jspsych.css" rel="stylesheet" type="text/css" />
+    <style>
+        .no-cursor {
+            cursor: none;
+        }
+        h1 {
+            font-size: 36px;
+        }
+        p {
+            font-size: 28px;
+        }
+    </style>
+    <style>
+        .no-cursor {
+            cursor:none;
+        }
+    </style>
+</head>
+<body>
+</body>
+
+<script>
+    var jsPsych = initJsPsych({
+        on_finish: function() {
+            jsPsych.data.addProperties({
+                participant: ID,
+                p_c: p_c,
+                p_h: p_h,
+                f_c: f_c,
+                f_h: f_h
+            });
+            var data = jsPsych.data.get().filter({task: 'response'});
+            if (p_c <= 0 || p_h <= 0 || f_c <= 0 || f_h <= 0) {
+                alert("Your performance was not higher than chance level in at least one condition. Please try again.");
+            } else {
+                data.localSave('csv', `GNAT_EN_${ID}.csv`);
+                alert("Thank you for your participation! Your data has been saved.");
+            }
+            
+        }
+    });
+    var timeline = [];
+    var ID = prompt("Please enter your participant ID:");
+
+    var fullscreen = {
+        type: jsPsychFullscreen,
+        fullscreen_mode: true
+    };
+    timeline.push(fullscreen);
+
+    var instructions = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: `
+            <h1>Welcome to this experiment!</h1>
+            <br>
+            <p>In this experiment, you need to:</p>
+            <p>(1) Press the <b>space bar</b> as quickly as possible for items belonging to the <b>target category(ies)</b>.</p>
+            <p>(2) Do nothing for items that do not belong.</p>
+            <p>Failure to respond to the target within the time limit, or responding to non-targets, will be judged as an error.</p>
+            <br>
+            <p>Please sit in a quiet environment and try to avoid distractions.</p>
+            <p>Your test scores will be given at the end of the experiment. </p>
+            <p>If your score is not higher than the chance level in any condition, you will need to redo the entire experiment.</p>
+            <p>So please try your best!</p>
+            <p>The experiment will take about 10 minutes.</p>
+            <br>
+            <p>(Press the space bar to continue...)</p>
+        `,
+        choices: 'NO_KEYS',
+        on_load: function() {
+            setTimeout(function() {
+                jsPsych.pluginAPI.getKeyboardResponse({
+                    valid_responses: [' '],
+                    callback_function: function() {
+                        jsPsych.finishTrial();
+                    }
+                });
+            }, 2000)
+        },
+        on_start: function() {
+            document.body.classList.add('no-cursor');
+        },
+    };
+    timeline.push(instructions);
+
+    var time_stimuli = [
+        {item: 'yesterday', category: 'past'},
+        {item: 'last week', category: 'past'},
+        {item: 'last month', category: 'past'},
+        {item: 'last year', category: 'past'},
+        {item: 'tomorrow', category: 'future'},
+        {item: 'next week', category: 'future'},
+        {item: 'next month', category: 'future'},
+        {item: 'next year', category: 'future'},
+    ];
+     var conditional_stimuli = [
+        {item: 'If I were a dog', category: 'counterfactual'},
+        {item: 'If I could fly', category: 'counterfactual'},
+        {item: 'If I had superpower', category: 'counterfactual'},
+        {item: 'If I lived on Mars', category: 'counterfactual'},
+        {item: 'If I am hungry', category: 'hypothetical'},
+        {item: 'If I fell happy', category: 'hypothetical'},
+        {item: 'If I work hard', category: 'hypothetical'},
+        {item: 'If I want to sleep', category: 'hypothetical'},
+    ];
+    var all_stimuli = time_stimuli.concat(conditional_stimuli);
+
+    var current_condition = '';
+
+    var fixation = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: '<div style="font-size:36px;">+</div>',
+        choices: "NO_KEYS",
+        trial_duration: 500,
+        on_start: function() {
+            document.body.classList.add('no-cursor');
+        }
+    };
+
+    var familiarization_task = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function() {
+            return `
+                <div style="font-size:36px;">${jsPsych.evaluateTimelineVariable('item')}</div>
+            `;
+        },
+        choices: [' '],
+        trial_duration: 1000,
+        on_start: function() {
+            document.body.classList.add('no-cursor');
+        },
+        on_finish: function(data) {
+            data.task = 'response';
+            data.block = 'familiarization';
+            data.condition = current_condition,
+            data.stimulus = jsPsych.evaluateTimelineVariable('item'),
+            data.category = jsPsych.evaluateTimelineVariable('category');
+            if(data.category == data.condition) {
+                data.correct_response = ' ';
+                data.trail_type = 'go';
+            } else {
+                data.correct_response = null;
+                data.trail_type = 'no-go';
+            };
+            if(data.response == data.correct_response) {
+                data.correct = true;
+            } else {
+                data.correct = false;
+            };
+        }
+    }
+
+    var feedback = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function() {
+            var last_trial_correct = jsPsych.data.get().last(1).values()[0].correct;
+            if (last_trial_correct) {
+                return `
+                <div style="font-size:36px; color: green;"><br><br>O</div>`;
+            } else {
+                return `
+                <div style="font-size:36px; color: red;"><br><br>X</div>`;
+            }   
+        },
+        choices: "NO_KEYS",
+        trial_duration: 100,
+        post_trial_gap: 50,
+        on_start: function() {
+            document.body.classList.add('no-cursor');
+        }
+    };
+
+    var familiarization_time_trials = {
+        timeline: [familiarization_task, feedback],
+        timeline_variables: time_stimuli, 
+        randomize_order: true,
+        repetitions: 2,
+        on_timeline_start: function() {
+            current_condition = jsPsych.evaluateTimelineVariable('condition');
+        },
+    }
+
+
+    var familiarization_time_instructions = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function() {
+            return `
+            <p>In this round, the target category is <b>${jsPsych.evaluateTimelineVariable('condition')}</b>. You need to:</p>
+            <p>(1) Press the space bar as quickly as possible for words expressing <b>${jsPsych.evaluateTimelineVariable('condition')}</b> time.</p>
+            <p>(2) Do nothing for other items.</p>
+            <br>
+            <p>(Press the space bar to start...)</p>
+        `
+        },
+        choices: 'NO_KEYS',
+        on_load: function() {
+            setTimeout(function() {
+                jsPsych.pluginAPI.getKeyboardResponse({
+                    valid_responses: [' '],
+                    callback_function: function() {
+                        jsPsych.finishTrial();
+                    }
+                });
+            }, 2000)
+        },
+        on_start: function() {
+            document.body.classList.add('no-cursor');
+        },
+    };
+
+    var familiarization_time_blocks = {
+        timeline: [familiarization_time_instructions, fixation, familiarization_time_trials],
+        timeline_variables: [{condition: 'past'}, {condition: 'future'}],
+        randomize_order: true,
+    }
+    timeline.push(familiarization_time_blocks);
+
+    var familiarization_conditional_trials = {
+        timeline: [familiarization_task, feedback],
+        timeline_variables: conditional_stimuli, 
+        randomize_order: true,
+        repetitions: 2,
+        on_timeline_start: function() {
+            current_condition = jsPsych.evaluateTimelineVariable('condition');
+        },
+    }
+
+    var familiarization_conditional_instructions = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function() {
+            return `
+            <p>Counterfactual conditionals describe situations that are contrary to reality, <br>for example, "If I were you".</p>
+            <p>Hypothetical conditionals describe situations that could be true or possible, <br>for example, "If I am sad".</p>
+            <br>
+            <p>In this round, the target category is <b>${jsPsych.evaluateTimelineVariable('condition')}</b>. You need to:</p>
+            <p>(1) Press the space bar as quickly as possible for <b>${jsPsych.evaluateTimelineVariable('condition')}</b> conditionals.</p>
+            <p>(2) Do nothing for other items.</p>
+            <br>
+            <p>(Press the space bar to start...)</p>
+        `
+        },
+        choices: 'NO_KEYS',
+        on_load: function() {
+            setTimeout(function() {
+                jsPsych.pluginAPI.getKeyboardResponse({
+                    valid_responses: [' '],
+                    callback_function: function() {
+                        jsPsych.finishTrial();
+                    }
+                });
+            }, 2000)
+        },
+        on_start: function() {
+            document.body.classList.add('no-cursor');
+        },
+    };
+
+    var familiarization_conditional_blocks = {
+        timeline: [familiarization_conditional_instructions, fixation, familiarization_conditional_trials],
+        timeline_variables: [{condition: 'counterfactual'}, {condition: 'hypothetical'}],
+        randomize_order: true,
+    };
+    timeline.push(familiarization_conditional_blocks);
+
+    var association_instructions = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function() {
+            return `
+            <p>In the subsequent rounds, each round will have <b>two categories</b> as the target.</p>
+            <p>Time limits will also become shorter.</p>
+            <br>
+            <p>(Press the space bar to continue...)</p>
+        `
+        },
+        choices: 'NO_KEYS',
+        on_load: function() {
+            setTimeout(function() {
+                jsPsych.pluginAPI.getKeyboardResponse({
+                    valid_responses: [' '],
+                    callback_function: function() {
+                        jsPsych.finishTrial();
+                    }
+                });
+            }, 2000)
+        },
+        on_start: function() {
+            document.body.classList.add('no-cursor');
+        },
+    }
+    timeline.push(association_instructions);
+
+    var association_conditions = [
+        {condition: 'past + counterfactual', time: 'past', conditional: 'counterfactual'},
+        {condition: 'past + hypothetical', time: 'past', conditional: 'hypothetical'},
+        {condition: 'future + counterfactual', time: 'future', conditional: 'counterfactual'},
+        {condition: 'future + hypothetical', time: 'future', conditional: 'hypothetical'},
+    ]
+
+    var association_practice_task = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function() {
+            return `
+                <div style="font-size:36px;">${jsPsych.evaluateTimelineVariable('item')}</div>
+            `;
+        },
+        choices: [' '],
+        trial_duration: 800,
+        on_start: function() {
+            document.body.classList.add('no-cursor');
+        },
+        on_finish: function(data) {
+            data.task = 'response';
+            data.block = 'practice';
+            data.condition = current_condition,
+            data.stimulus = jsPsych.evaluateTimelineVariable('item'),
+            data.category = jsPsych.evaluateTimelineVariable('category');
+            data.time = jsPsych.evaluateTimelineVariable('time');
+            data.conditional = jsPsych.evaluateTimelineVariable('conditional');
+            if(data.category == data.time || data.category == data.conditional) {
+                data.correct_response = ' ';
+                data.trail_type = 'go';
+            } else {
+                data.correct_response = null;
+                data.trail_type = 'no-go';
+            };
+            if(data.response == data.correct_response) {
+                data.correct = true;
+            } else {
+                data.correct = false;
+            };
+        }
+    }
+
+    var association_formal_task = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function() {
+            return `
+                <div style="font-size:36px;">${jsPsych.evaluateTimelineVariable('item')}</div>
+            `;
+        },
+        choices: [' '],
+        trial_duration: 800,
+        on_start: function() {
+            document.body.classList.add('no-cursor');
+        },
+        on_finish: function(data) {
+            data.task = 'response';
+            data.block = 'formal';
+            data.condition = current_condition,
+            data.stimulus = jsPsych.evaluateTimelineVariable('item'),
+            data.category = jsPsych.evaluateTimelineVariable('category');
+            data.time = jsPsych.evaluateTimelineVariable('time');
+            data.conditional = jsPsych.evaluateTimelineVariable('conditional');
+            if(data.category == data.time || data.category == data.conditional) {
+                data.correct_response = ' ';
+                data.trail_type = 'go';
+            } else {
+                data.correct_response = null;
+                data.trail_type = 'no-go';
+            };
+            if(data.response == data.correct_response) {
+                data.correct = true;
+            } else {
+                data.correct = false;
+            };
+        }
+    }
+
+    var association_practice_instructions = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function() {
+            return `
+            <p>In this round, the target categories are <b>${jsPsych.evaluateTimelineVariable('time')}</b> and <b>${jsPsych.evaluateTimelineVariable('conditional')}</b>. You need to:</p>
+            <p>(1) Press the space bar as quickly as possible for items belonging to <b>${jsPsych.evaluateTimelineVariable('time')}</b> and <b>${jsPsych.evaluateTimelineVariable('conditional')}</b>.</p>
+            <p>(2) Do nothing for other items.</p>
+            <br>
+            <p>(Press the space bar to start practice...)</p>
+        `
+        },
+        choices: 'NO_KEYS',
+        on_load: function() {
+            setTimeout(function() {
+                jsPsych.pluginAPI.getKeyboardResponse({
+                    valid_responses: [' '],
+                    callback_function: function() {
+                        jsPsych.finishTrial();
+                    }
+                });
+            }, 2000)
+        },
+        on_start: function() {
+            document.body.classList.add('no-cursor');
+        },
+    };
+
+    var association_formal_instructions = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function() {
+            return `
+            <p>Now the practice is over.</p>
+            <p>Again, as a reminder, the target categories in this round are <b>${jsPsych.evaluateTimelineVariable('time')}</b> and <b>${jsPsych.evaluateTimelineVariable('conditional')}</b>. </p>
+            <br>
+            <p>(Press the space bar to start the formal experiment...)</p>
+        `
+        },
+        choices: 'NO_KEYS',
+        on_load: function() {
+            setTimeout(function() {
+                jsPsych.pluginAPI.getKeyboardResponse({
+                    valid_responses: [' '],
+                    callback_function: function() {
+                        jsPsych.finishTrial();
+                    }
+                });
+            }, 2000)
+        },
+        on_start: function() {
+            document.body.classList.add('no-cursor');
+        },
+    };
+   
+    var association_practice_trials = {
+        timeline: [association_practice_task, feedback],
+        timeline_variables: all_stimuli, 
+        randomize_order: true,
+        repetitions: 1,
+        on_timeline_start: function() {
+            current_condition = jsPsych.evaluateTimelineVariable('condition');
+        },
+    }
+    var association_formal_trials = {
+        timeline: [association_formal_task, feedback],
+        timeline_variables: all_stimuli, 
+        randomize_order: true,
+        repetitions: 4,
+        on_timeline_start: function() {
+            current_condition = jsPsych.evaluateTimelineVariable('condition');
+        },
+    }
+    var association_blocks = {
+        timeline: [association_practice_instructions, fixation, association_practice_trials, association_formal_instructions, fixation, association_formal_trials],
+        timeline_variables: association_conditions,
+        randomize_order: true,
+    }
+    timeline.push(association_blocks);
+    
+    var p_c = 0;
+    var p_h = 0;
+    var f_c = 0;
+    var f_h = 0;
+    function d_prime(data){
+        var hits = data.filter({trail_type: 'go', correct: true}).count() / data.filter({trail_type: 'go'}).count();
+        hits = Math.min(Math.max(hits, 1/data.count()), 1-1/data.count());
+        var false_alarms = data.filter({trail_type: 'no-go', correct: false}).count() / data.filter({trail_type: 'no-go'}).count();
+        false_alarms = Math.min(Math.max(false_alarms, 1/data.count()), 1-1/data.count());
+        return jStat.normal.inv(hits,0,1) - jStat.normal.inv(false_alarms,0,1);
+    }
+
+    var debrief = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function() {
+            var data = jsPsych.data.get().filter({task: 'response', block: 'formal'});
+            var p_c_data = data.filter({time: 'past', conditional: 'counterfactual'});
+            var p_h_data = data.filter({time: 'past', conditional: 'hypothetical'});
+            var f_c_data = data.filter({time: 'future', conditional: 'counterfactual'});
+            var f_h_data = data.filter({time: 'future', conditional: 'hypothetical'});
+            p_c = d_prime(p_c_data);
+            p_h = d_prime(p_h_data);
+            f_c = d_prime(f_c_data);
+            f_h = d_prime(f_h_data);
+            return`
+            <h1>The experiment is over!</h1>
+            <br>
+            <p> Your scores are as follows:</p>
+            <br>
+                <p>past + counterfactual: ${p_c.toFixed(2)}</p>
+                <p>past + hypothetical: ${p_h.toFixed(2)}</p>
+                <p>future + counterfactual: ${f_c.toFixed(2)}</p>
+                <p>future + hypothetical: ${f_h.toFixed(2)}</p>
+            <br>
+            <p>You will need to do the entire experiment again if any of the above scores is not higher than zero.</p>
+            <br>
+            <p>(Press the space bar to exit...)</p>
+        `},
+        choices: 'NO_KEYS',
+        on_load: function() {
+            setTimeout(function() {
+                jsPsych.pluginAPI.getKeyboardResponse({
+                    valid_responses: [' '],
+                    callback_function: function() {
+                        jsPsych.finishTrial();
+                    }
+                });
+            }, 2000)
+        },
+        on_finish: function() {
+            document.body.classList.remove('no-cursor');
+        },
+    };
+    timeline.push(debrief);
+
+    var fullscreen_exit = {
+        type: jsPsychFullscreen,
+        fullscreen_mode: false
+    };
+    timeline.push(fullscreen_exit);
+
+    jsPsych.run(timeline);
+</script>
+</html>
