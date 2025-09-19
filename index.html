@@ -18,7 +18,7 @@
             font-size: 36px;
         }
         p {
-            font-size: 28px;
+            font-size: 26px;
         }
     </style>
     <style>
@@ -64,14 +64,15 @@
         stimulus: `
             <h1>Welcome to this experiment!</h1>
             <br>
-            <p>In this experiment, you need to:</p>
-            <p>(1) Press the <b>space bar</b> as quickly as possible for items belonging to the <b>target category(ies)</b>.</p>
-            <p>(2) Do nothing for items that do not belong.</p>
-            <p>Failure to respond to the target within the time limit, or responding to non-targets, will be judged as an error.</p>
-            <br>
             <p>Please sit in a quiet environment and try to avoid distractions.</p>
+            <p>In this experiment, you will see a series of words or expressions presented one at a time on the screen.</p>
+            <p>Each round will have a target category (or two target categories), which will be announced before the round begins.</p>
+            <p>Your task is to press the <b>space bar</b> when you see an item belonging to the target category (or categories).</p>
+            <p>You should do nothing when you see a non-target, and wait for the next item to appear.</p>
+            <p>Not responding to the target within the time limit, or responding to a non-target, will be considered an error.</p>
+            <p>Feedback(<span style="color: green">O</span>/<span style="color: red">X</span>) will be given after each item.</p>
             <p>Your test scores will be given at the end of the experiment. </p>
-            <p>If your score is not higher than the chance level in any condition, you will need to redo the entire experiment.</p>
+            <p>If your score is not higher than the chance level, you will need to redo the entire experiment.</p>
             <p>So please try your best!</p>
             <p>The experiment will take about 10 minutes.</p>
             <br>
@@ -110,7 +111,7 @@
         {item: 'If I had superpower', category: 'counterfactual'},
         {item: 'If I lived on Mars', category: 'counterfactual'},
         {item: 'If I am hungry', category: 'hypothetical'},
-        {item: 'If I fell happy', category: 'hypothetical'},
+        {item: 'If I feel happy', category: 'hypothetical'},
         {item: 'If I work hard', category: 'hypothetical'},
         {item: 'If I want to sleep', category: 'hypothetical'},
     ];
@@ -198,7 +199,8 @@
             return `
             <p>In this round, the target category is <b>${jsPsych.evaluateTimelineVariable('condition')}</b>. You need to:</p>
             <p>(1) Press the space bar as quickly as possible for words expressing <b>${jsPsych.evaluateTimelineVariable('condition')}</b> time.</p>
-            <p>(2) Do nothing for other items.</p>
+            <p>(2) Do nothing for other items, and wait for the next item to appear.</p>
+            <p>Not responding to the target within the time limit, or responding to a non-target, will be considered an error.</p>
             <br>
             <p>(Press the space bar to start...)</p>
         `
@@ -245,7 +247,8 @@
             <br>
             <p>In this round, the target category is <b>${jsPsych.evaluateTimelineVariable('condition')}</b>. You need to:</p>
             <p>(1) Press the space bar as quickly as possible for <b>${jsPsych.evaluateTimelineVariable('condition')}</b> conditionals.</p>
-            <p>(2) Do nothing for other items.</p>
+            <p>(2) Do nothing for other items, and wait for the next item to appear.</p>
+            <p>Not responding to the target within the time limit, or responding to a non-target, will be considered an error.</p>
             <br>
             <p>(Press the space bar to start...)</p>
         `
@@ -277,7 +280,8 @@
         type: jsPsychHtmlKeyboardResponse,
         stimulus: function() {
             return `
-            <p>In the subsequent rounds, each round will have <b>two categories</b> as the target.</p>
+            <p>In the subsequent rounds, each round will have <b>two</b> target categories.</p>
+            <p>You need to press the space bar for items belonging to either of the two target categories.</p>
             <p>Time limits will also become shorter.</p>
             <br>
             <p>(Press the space bar to continue...)</p>
@@ -382,8 +386,10 @@
         stimulus: function() {
             return `
             <p>In this round, the target categories are <b>${jsPsych.evaluateTimelineVariable('time')}</b> and <b>${jsPsych.evaluateTimelineVariable('conditional')}</b>. You need to:</p>
-            <p>(1) Press the space bar as quickly as possible for items belonging to <b>${jsPsych.evaluateTimelineVariable('time')}</b> and <b>${jsPsych.evaluateTimelineVariable('conditional')}</b>.</p>
-            <p>(2) Do nothing for other items.</p>
+            <p>(1) Press the space bar as quickly as possible for items belonging to <b>${jsPsych.evaluateTimelineVariable('time')}</b> or <b>${jsPsych.evaluateTimelineVariable('conditional')}</b>.</p>
+            <p>(2) Do nothing for other items, and wait for the next item to appear.</p>
+            <p>Not responding to the target within the time limit, or responding to a non-target, will be considered an error.</p>
+            <p>You will have a short practice before the formal experiment.</p>
             <br>
             <p>(Press the space bar to start practice...)</p>
         `
@@ -409,7 +415,7 @@
         stimulus: function() {
             return `
             <p>Now the practice is over.</p>
-            <p>Again, as a reminder, the target categories in this round are <b>${jsPsych.evaluateTimelineVariable('time')}</b> and <b>${jsPsych.evaluateTimelineVariable('conditional')}</b>. </p>
+            <p>Again, as a reminder, the two target categories in this round are <b>${jsPsych.evaluateTimelineVariable('time')}</b> and <b>${jsPsych.evaluateTimelineVariable('conditional')}</b>. </p>
             <br>
             <p>(Press the space bar to start the formal experiment...)</p>
         `
@@ -482,7 +488,8 @@
             return`
             <h1>The experiment is over!</h1>
             <br>
-            <p> Your scores are as follows:</p>
+            <p>Thank you for your participation!</p>
+            <p>Your scores are as follows:</p>
             <br>
                 <p>past + counterfactual: ${p_c.toFixed(2)}</p>
                 <p>past + hypothetical: ${p_h.toFixed(2)}</p>
