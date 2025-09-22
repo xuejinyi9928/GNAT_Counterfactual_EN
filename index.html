@@ -34,7 +34,7 @@
     var jsPsych = initJsPsych({
         on_finish: function() {
             jsPsych.data.addProperties({
-                participant: ID,
+                participant: id,
                 p_c: p_c,
                 p_h: p_h,
                 f_c: f_c,
@@ -44,15 +44,18 @@
             if (p_c <= 0 || p_h <= 0 || f_c <= 0 || f_h <= 0) {
                 alert("Your performance was not higher than chance level in at least one condition. Please try again.");
             } else {
-                data.localSave('csv', `GNAT_EN_${ID}.csv`);
+                data.localSave('csv', `GNAT_EN_${id}.csv`);
                 alert("Thank you for your participation! Your data has been saved.");
             }
             
         }
     });
     var timeline = [];
-    var ID = prompt("Please enter your participant ID:");
-
+    var id;
+    do {
+        id = prompt("Please enter your participant ID：", "");
+    } while (!/^\d+$/.test(id));
+    
     var fullscreen = {
         type: jsPsychFullscreen,
         fullscreen_mode: true
